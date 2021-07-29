@@ -12,7 +12,7 @@ def command_over_ssh(ssh_args):
         elif 'ssh_key' in ssh_args:
             ssh.connect(ssh_args['ip'], ssh_port, ssh_args['username'],  key_filename=ssh_args['ssh_key'])
         stdin, stdout, stderr = ssh.exec_command(ssh_args['commands'])
-    except paramiko.ssh_exception.AuthenticationException as e:
+    except Exception as e:
         exit(e)
     ssh_result = stdout.readlines()
     ssh_error = stderr.readlines()
@@ -46,7 +46,7 @@ def rudimentary_cm():
     play_data=json.load(playbook)
     for play in play_data:
         ssh_args['username']=play['access_details']['user']
-        ssh_args['port']=2222
+        ssh_args['port']=2122
         if 'keypair' in play['access_details']:
             ssh_args['ssh_key']=play['access_details']['keypair']
         else:
