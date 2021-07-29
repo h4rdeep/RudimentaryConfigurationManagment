@@ -2,6 +2,25 @@
 import json, sys
 import paramiko
 
+def command_over_ssh(ssh_args):
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_port= ssh_args['port'] if 'port' in ssh_args else 22
+    try:
+        if 'pass' in ssh_args:
+            ssh.connect(ssh_args['ip'], ssh_port, ssh_args['username'], ssh_args['pass'])
+        elif 'ssh_key' in ssh_args:
+            ssh.connect(ssh_args['ip'], ssh_port, ssh_args['username'],  key_filename=ssh_args['ssh_key'])
+        stdin, stdout, stderr = ssh.exec_command(ssh_args['commands'])
+    except paramiko.ssh_exception.AuthenticationException as e:
+        exit(e)
+    ssh_result = stdout.readlines()
+    ssh_error = stderr.readlines()
+    ssh_error = stderr.readlines()
+    return ssh_result 
+
+
 def rudimentary_cm():
     ssh_args={}
     playbook=open(play_file)
@@ -27,3 +46,6 @@ def rudimentary_cm():
                 globals()[task_name](task_config)
                 print("_______")
             print("+++++++")
+
+if __name__ == "__main__":
+    rudimentary_cm()
