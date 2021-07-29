@@ -9,16 +9,24 @@
         "config":
         {
             "packages":
-            {
-                "name":["apache2"],
-                "state":"present"
-            },
+            [
+                {
+                    "name":["apache2"],
+                    "state":"present"
+                },
+                {
+                    "name":["apache2"],
+                    "state":"absent"
+                }
+            ],
             "files":
-            {                
-                "source":"",
-                "destination":"",
-                "mode":""
-            }
+            [
+                {                
+                    "source":"",
+                    "destination":"",
+                    "mode":""
+                }
+        ]
         }
     }
 ]
