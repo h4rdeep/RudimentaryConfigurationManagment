@@ -13,10 +13,6 @@
                 {
                     "name":["nano","apache2"],
                     "state":"present"
-                },
-                {
-                    "name":["nano"],
-                    "state":"absent"
                 }
             ],
             "files":
@@ -26,7 +22,14 @@
                     "destination":"",
                     "mode":""
                 }
-        ]
+            ],
+            "services":
+            [
+                {
+                    "name":["apache2"],
+                    "state":"restart"
+                }
+            ]
         }
     }
 ]

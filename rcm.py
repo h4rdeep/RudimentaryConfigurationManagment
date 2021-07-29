@@ -23,7 +23,8 @@ def command_over_ssh(ssh_args):
 def packages(package_info,ssh_info):
     def check_package():
         ssh_info["commands"]="dpkg-query -W -f='${Status}' "+ package
-        pkg_status= command_over_ssh(ssh_info)[0] if bool(command_over_ssh(ssh_info)[0]) else command_over_ssh(ssh_info)[1]
+        pkg_stts=command_over_ssh(ssh_info)
+        pkg_status= pkg_stts[0] if bool(command_over_ssh(ssh_info)[0]) else pkg_stts[1]
         return pkg_status
     # print("package function")
     # print(ssh_info)
@@ -31,7 +32,7 @@ def packages(package_info,ssh_info):
     for pkg_block in package_info:
         for package in pkg_block['name']:
             if pkg_block['state'] == 'present':
-                print("+++++++++\nInstalling {}\n+++++++++".format(package))
+                print("+++++++++ \n Installing {}\n+++++++++".format(package))
                 if 'ok installed' in check_package()[0]:
                     print("'"+package + "' already installed. [Ok]")
                     break
@@ -39,7 +40,7 @@ def packages(package_info,ssh_info):
                     ssh_info["commands"]="sudo apt-get -y install " + package
 
             elif pkg_block['state'] == 'absent':
-                print("+++++++++\nRemoving {}\n+++++++++".format(package))
+                print("+++++++++ \n Removing {}\n+++++++++".format(package))
                 if 'ok installed' in check_package()[0]:
                     ssh_info["commands"]="sudo apt-get -y --purge remove " + package
                 elif 'no packages found' in check_package()[0]:
@@ -62,6 +63,48 @@ def files(file_info, ssh_info):
     print(file_info)
     print(ssh_info)
 
+def services(service_info, ssh_info):
+    def check_service():
+        ssh_info["commands"]="systemctl show -p SubState --value  "+ srvc
+        srv_stts=command_over_ssh(ssh_info)
+        # print(srv_stts)
+        srv_status= srv_stts[0] if bool(command_over_ssh(ssh_info)[0]) else srv_stts[1]
+        return srv_status
+
+    for srv_block in service_info:
+        for srvc in srv_block['name']:
+            if srv_block['state'] == 'start':
+                print("+++++++++ \n Starting {} Service\n+++++++++".format(srvc))
+                if 'running' in check_service()[0]:
+                    print("'"+ srvc + "' already running. [Ok]")
+                    break
+                elif 'dead' in check_service()[0]:
+                    ssh_info["commands"]="sudo systemctl start " + srvc
+                else:
+                    exit("Unrecognized service state '{}' for {} service.".format(check_service()[0],srvc))
+
+            elif srv_block['state'] == 'stop':
+                print("+++++++++ \n Stopping {} Service\n+++++++++".format(srvc))
+                if 'running' in check_service()[0]:
+                    ssh_info["commands"]="sudo systemctl stop " + srvc
+                elif 'dead' in check_service()[0]:
+                    print("'"+ srvc + "' already in stopped condition. [Ok]")
+                    break
+                else:
+                    exit("Unrecognized service state '{}' for {} service.".format(check_service()[0],srvc))
+            elif srv_block['state'] == 'restart':
+                print("+++++++++ \n Restarting {} Service\n+++++++++".format(srvc))
+                ssh_info["commands"]="sudo systemctl restart " + srvc
+            elif srv_block['state'] == 'daemon-reload':
+                print("+++++++++ \n Reloading the systemctl deamon\n+++++++++")
+                ssh_info["commands"]="sudo systemctl daemon-reload "
+            else:
+                exit("Service state '{}' not supported.".format(srv_block['state']))
+
+            ssh_out, ssh_err=command_over_ssh(ssh_info)
+            if bool(ssh_err): exit(ssh_err)
+            for line in ssh_out:
+                print(line)
 def rudimentary_cm():
     ssh_args={}
     play_file=sys.argv[1]
