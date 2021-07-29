@@ -20,7 +20,10 @@ def command_over_ssh(ssh_args):
     ssh_error = stderr.readlines()
     return ssh_result 
 
-
+def packages():
+    pass
+def files():
+    pass
 def rudimentary_cm():
     ssh_args={}
     playbook=open(play_file)
