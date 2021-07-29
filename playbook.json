@@ -18,16 +18,18 @@
             "files":
             [
                 {                
-                    "source":"",
-                    "destination":"",
-                    "mode":""
+                    "source":"files/index.php",
+                    "destination":"/var/www/html/index.php",
+                    "mode":"0644",
+                    "owner":"root"
+
                 }
             ],
             "services":
             [
                 {
                     "name":["apache2"],
-                    "state":"restart"
+                    "state":"stop"
                 }
             ]
         }
