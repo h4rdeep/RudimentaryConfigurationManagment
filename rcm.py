@@ -23,7 +23,17 @@ def packages(package_info,ssh_info):
     print("package function")
     print(ssh_info)
     print(package_info)
- 
+    for pkg_block in package_info:
+        for package in pkg_block['name']:
+            print(package)
+            if pkg_block['state'] == 'present':
+                ssh_info["commands"]="sudo apt-get -y install " + package
+            elif pkg_block['state'] == 'absent':
+                ssh_info["commands"]="sudo apt-get -y remove " + package
+            else:
+                exit("Packages state '{}' not supported.".format(pkg_block['state']))
+            print(pkg_block['state'])
+            print(ssh_info["commands"])
 def files(file_info, ssh_info):
     print("files function")
     print(file_info)
