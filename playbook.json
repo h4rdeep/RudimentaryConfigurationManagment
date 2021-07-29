@@ -11,11 +11,11 @@
             "packages":
             [
                 {
-                    "name":["apache2"],
+                    "name":["nano","apache2"],
                     "state":"present"
                 },
                 {
-                    "name":["apache2"],
+                    "name":["nano"],
                     "state":"absent"
                 }
             ],
