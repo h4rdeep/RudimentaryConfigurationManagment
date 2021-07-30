@@ -16,10 +16,18 @@ def command_over_ssh(ssh_args, mode="ssh"):
             if mode=="ssh":
                 stdin, stdout, stderr = ssh.exec_command(ssh_args['commands'],  get_pty=True)
             elif mode=="scp":
-                ftp_client=ssh.open_sftp()
+                sftp_client=ssh.open_sftp()
                 file_name=ssh_args["source_file"].split("/")[-1]
-                stdout = ftp_client.put(ssh_args["source_file"],"/tmp/"+file_name)
-                ftp_client.close()  
+                stdout = sftp_client.put(ssh_args["source_file"],"/tmp/"+file_name)
+                sftp_client.close()  
+            elif mode=='check':
+                try:
+                    sftp_client=ssh.open_sftp()
+                    remote_file_status=sftp_client.stat(ssh_args["destination_file"])
+                    sftp_client.close() 
+                    stdout='file exists'
+                except IOError:
+                    stdout='file not found'
         except Exception as e:
             print("exception occured")
             exit(e)
@@ -71,7 +79,7 @@ def packages(package_info,ssh_info):
 
 def files(file_info, ssh_info):
 
-    def check_files():
+    def compare_files():
         ssh_info['commands']="diff -qs /tmp/"+ ssh_info['source_file'].split('/')[-1] +" "+ssh_info['destination_file']
         file_stts=command_over_ssh(ssh_info)
         file_status= file_stts[0] if bool(command_over_ssh(ssh_info)[0]) else file_stts[1]
@@ -87,7 +95,7 @@ def files(file_info, ssh_info):
             ssh_info["file_group"]=file_block["group"] if 'group' in file_block else  file_block["owner"]
             file_transfer=command_over_ssh(ssh_info,'scp')
 
-            file_check=check_files()
+            file_check=compare_files()
             if 'identical' in file_check[0]:
                 print("'"+file_block["source"] + "' and '"+ file_block["destination"] +"' are identical. [Ok]")
                 continue
@@ -109,13 +117,15 @@ def files(file_info, ssh_info):
 
         elif file_block["state"]=='absent':
             print("+++++++++ \n Delete remote Files: {}\n+++++++++".format(file_block["destination"]))
-            ssh_info['commands']="sudo chmod 777 "+ ssh_info['destination_file']
-            perm_file=command_over_ssh(ssh_info)
-            ssh_info['commands']="sudo rm -f "+ ssh_info['destination_file']
-            del_file=command_over_ssh(ssh_info)
-
-
-
+            rfile_stat=command_over_ssh(ssh_info,'check')
+            print(rfile_stat)
+            if 'file not found' in rfile_stat[0]:
+                print("Remote file '{}' does not exits. [Ok]".format(file_block["destination"]))
+            else:
+                ssh_info['commands']="sudo chmod 777 "+ ssh_info['destination_file']
+                perm_file=command_over_ssh(ssh_info)
+                ssh_info['commands']="sudo rm -f "+ ssh_info['destination_file']
+                del_file=command_over_ssh(ssh_info)
 
         
 
@@ -162,6 +172,7 @@ def services(service_info, ssh_info):
             if bool(ssh_err): exit(ssh_err)
             for line in ssh_out:
                 print(line)
+
 def rudimentary_cm():
     ssh_args={}
     # play_file=sys.argv[1]
@@ -189,7 +200,6 @@ def rudimentary_cm():
                 # print(task_name)
                 # print(task_config)
                 globals()[task_name](task_config,ssh_args)
-                print("_______")
             print("+++++++")
 
 if __name__ == "__main__":
