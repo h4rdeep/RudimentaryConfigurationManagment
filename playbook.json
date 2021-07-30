@@ -2,20 +2,16 @@
     {
         "access_details":
         {
-            "ip":["127.0.0.1"],
-            "user":"vagrant",
-            "keypair":"/Users/hardesingh/Documents/Extras/vagrant/.vagrant/machines/default/virtualbox/private_key"
+            "ip":[""],
+            "user":"",
+            "password":""
         },
         "config":
         {
             "packages":
             [
                 {
-                    "name":["nano","apache2"],
-                    "state":"present"
-                },
-                {
-                    "name":["nano"],
+                    "name":["apache2"],
                     "state":"present"
                 }
             ],
@@ -39,6 +35,9 @@
             ],
             "services":
             [
+                {
+                    "state":"daemon-reload"
+                },
                 {
                     "name":["apache2"],
                     "state":"restart"
