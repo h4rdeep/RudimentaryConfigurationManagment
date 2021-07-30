@@ -15,6 +15,7 @@
 **Usage**:<br/>
   
   ```python rcm.py playbook.json```<br/>
+  
   ![Usage](usage.png)
   
 **Playbook tasks/Modules**<br/>
@@ -59,6 +60,7 @@ _Details about modules of playbook_<br/>
   
 **Files**<br/>
   This directory contains all the files that needs to be copied/transfered to the target machines.<br>
+  
   ![Files Directory](files.png)
 **Notes**<br/>
   This tool currently only supports Ubuntu/Debian target machines with a limited set of modules/features.
