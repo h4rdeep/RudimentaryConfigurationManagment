@@ -39,9 +39,7 @@ def packages(package_info,ssh_info):
         pkg_stts=command_over_ssh(ssh_info)
         pkg_status= pkg_stts[0] if bool(command_over_ssh(ssh_info)[0]) else pkg_stts[1]
         return pkg_status
-    # print("package function")
-    # print(ssh_info)
-    # print(package_info)
+
     for pkg_block in package_info:
         for package in pkg_block['name']:
             validate_package=check_package()
@@ -64,26 +62,22 @@ def packages(package_info,ssh_info):
                     exit(validate_package)
             else:
                 exit("Packages state '{}' not supported.".format(pkg_block['state']))
-            # print(pkg_block['state'])
-            # print(ssh_info["commands"])
+
             ssh_out, ssh_err=command_over_ssh(ssh_info)
-            # print(ssh_err)
+
             if bool(ssh_err): exit(ssh_err)
             for line in ssh_out:
                 print(line)
 
 def files(file_info, ssh_info):
-    print("files function")
-    print(file_info)
-    print(len(file_info))
+
     def check_files():
         ssh_info['commands']="diff -qs /tmp/"+ ssh_info['source_file'].split('/')[-1] +" "+ssh_info['destination_file']
         file_stts=command_over_ssh(ssh_info)
         file_status= file_stts[0] if bool(command_over_ssh(ssh_info)[0]) else file_stts[1]
-        print(file_status)
         return file_status
+
     for file_block in file_info:
-        print(file_block)
         ssh_info["destination_file"]=file_block["destination"]
         if file_block["state"]=='copy':
             print("+++++++++ \n Moving Files: {}\n+++++++++".format(file_block["source"]))
@@ -92,29 +86,27 @@ def files(file_info, ssh_info):
             ssh_info["file_owner"]=file_block["owner"]
             ssh_info["file_group"]=file_block["group"] if 'group' in file_block else  file_block["owner"]
             file_transfer=command_over_ssh(ssh_info,'scp')
-            print(file_transfer)
+
             file_check=check_files()
             if 'identical' in file_check[0]:
                 print("'"+file_block["source"] + "' and '"+ file_block["destination"] +"' are identical. [Ok]")
                 continue
             elif 'differ' in file_check[0] or 'No such file' in file_check[0]:
-                print("different")
-                print(file_block["name"])
+
                 if 'No such file' in file_check[0]:
                     ssh_info['commands']="sudo touch "+ ssh_info['destination_file']
-                    # ssh_info['commands']="sudo cp /tmp/"+ file_block["name"] +" "+ ssh_info['destination_file']
                     create_file=command_over_ssh(ssh_info)
-                    # print(create_file)
+
                 ssh_info['commands']="sudo chmod 777 "+ ssh_info['destination_file']
                 change_permission=command_over_ssh(ssh_info)
                 ssh_info['commands']="sudo cat /tmp/"+ file_block["name"] +" > "+ ssh_info['destination_file']
                 copy_content=command_over_ssh(ssh_info)
-                print("copy_content: {}".format(copy_content))
+                # print("copy_content: {}".format(copy_content))
                 if "Permission denied" in copy_content:
                     exit(copy_content[0])
                 ssh_info["commands"]="sudo chown "+ ssh_info["file_owner"] + ":" + ssh_info["file_owner"]+" "+  ssh_info['destination_file'] +"; sudo chmod "+ ssh_info["file_mode"]+" "+ssh_info['destination_file']
                 file_perm=command_over_ssh(ssh_info)
-                print(file_perm)
+
         elif file_block["state"]=='absent':
             print("+++++++++ \n Delete remote Files: {}\n+++++++++".format(file_block["destination"]))
             ssh_info['commands']="sudo chmod 777 "+ ssh_info['destination_file']
@@ -178,7 +170,7 @@ def rudimentary_cm():
     play_data=json.load(playbook)
     for play in play_data:
         ssh_args['username']=play['access_details']['user']
-        ssh_args['port']=2222
+        # ssh_args['port']=2222
         if 'keypair' in play['access_details']:
             ssh_args['ssh_key']=play['access_details']['keypair']
         else:
