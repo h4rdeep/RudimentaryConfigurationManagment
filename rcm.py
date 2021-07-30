@@ -49,7 +49,7 @@ def packages(package_info,ssh_info):
                 print("+++++++++ \n Installing {}\n+++++++++".format(package))
                 if 'ok installed' in validate_package[0]:
                     print("'"+package + "' already installed. [Ok]")
-                    break
+                    continue
                 elif 'no packages found' in validate_package[0]:
                     ssh_info["commands"]="sudo apt-get -y install " + package
 
@@ -59,7 +59,7 @@ def packages(package_info,ssh_info):
                     ssh_info["commands"]="sudo apt-get -y --purge remove " + package
                 elif 'no packages found' in validate_package[0]:
                     print("'"+package + "' not found. [Ok]")
-                    break
+                    continue
                 else:
                     exit(validate_package)
             else:
@@ -74,6 +74,8 @@ def packages(package_info,ssh_info):
 
 def files(file_info, ssh_info):
     print("files function")
+    print(file_info)
+    print(len(file_info))
     def check_files():
         ssh_info['commands']="diff -qs /tmp/"+ ssh_info['source_file'].split('/')[-1] +" "+ssh_info['destination_file']
         file_stts=command_over_ssh(ssh_info)
@@ -81,36 +83,47 @@ def files(file_info, ssh_info):
         print(file_status)
         return file_status
     for file_block in file_info:
-        print("+++++++++ \n Moving Files: {}\n+++++++++".format(file_block["source"]))
-        ssh_info["source_file"]=file_block["source"]
+        print(file_block)
         ssh_info["destination_file"]=file_block["destination"]
-        ssh_info["file_mode"]=file_block["mode"]
-        ssh_info["file_owner"]=file_block["owner"]
-        ssh_info["file_group"]=file_block["group"] if 'group' in file_block else  file_block["owner"]
-        file_transfer=command_over_ssh(ssh_info,'scp')
-        print(file_transfer)
-        file_check=check_files()
-        if 'identical' in file_check[0]:
-            print("'"+file_block["source"] + "' and '"+ file_block["destination"] +"' are identical. [Ok]")
-            break
-        elif 'differ' in file_check[0] or 'No such file' in file_check[0]:
-            print("different")
-            print(ssh_info["source_file"].split("/")[-1])
-            if 'No such file' in file_check[0]:
-                ssh_info['commands']="sudo touch "+ ssh_info['destination_file']
-                # ssh_info['commands']="sudo cp /tmp/"+ ssh_info["source_file"].split("/")[-1] +" "+ ssh_info['destination_file']
-                create_file=command_over_ssh(ssh_info)
-                # print(create_file)
+        if file_block["state"]=='copy':
+            print("+++++++++ \n Moving Files: {}\n+++++++++".format(file_block["source"]))
+            ssh_info["source_file"]=file_block["source"]
+            ssh_info["file_mode"]=file_block["mode"]
+            ssh_info["file_owner"]=file_block["owner"]
+            ssh_info["file_group"]=file_block["group"] if 'group' in file_block else  file_block["owner"]
+            file_transfer=command_over_ssh(ssh_info,'scp')
+            print(file_transfer)
+            file_check=check_files()
+            if 'identical' in file_check[0]:
+                print("'"+file_block["source"] + "' and '"+ file_block["destination"] +"' are identical. [Ok]")
+                continue
+            elif 'differ' in file_check[0] or 'No such file' in file_check[0]:
+                print("different")
+                print(file_block["name"])
+                if 'No such file' in file_check[0]:
+                    ssh_info['commands']="sudo touch "+ ssh_info['destination_file']
+                    # ssh_info['commands']="sudo cp /tmp/"+ file_block["name"] +" "+ ssh_info['destination_file']
+                    create_file=command_over_ssh(ssh_info)
+                    # print(create_file)
+                ssh_info['commands']="sudo chmod 777 "+ ssh_info['destination_file']
+                change_permission=command_over_ssh(ssh_info)
+                ssh_info['commands']="sudo cat /tmp/"+ file_block["name"] +" > "+ ssh_info['destination_file']
+                copy_content=command_over_ssh(ssh_info)
+                print("copy_content: {}".format(copy_content))
+                if "Permission denied" in copy_content:
+                    exit(copy_content[0])
+                ssh_info["commands"]="sudo chown "+ ssh_info["file_owner"] + ":" + ssh_info["file_owner"]+" "+  ssh_info['destination_file'] +"; sudo chmod "+ ssh_info["file_mode"]+" "+ssh_info['destination_file']
+                file_perm=command_over_ssh(ssh_info)
+                print(file_perm)
+        elif file_block["state"]=='absent':
+            print("+++++++++ \n Delete remote Files: {}\n+++++++++".format(file_block["destination"]))
             ssh_info['commands']="sudo chmod 777 "+ ssh_info['destination_file']
-            change_permission=command_over_ssh(ssh_info)
-            ssh_info['commands']="sudo cat /tmp/"+ ssh_info["source_file"].split("/")[-1] +" > "+ ssh_info['destination_file']
-            copy_content=command_over_ssh(ssh_info)
-            print("copy_content: {}".format(copy_content))
-            if "Permission denied" in copy_content:
-                exit(copy_content[0])
-            ssh_info["commands"]="sudo chown "+ ssh_info["file_owner"] + ":" + ssh_info["file_owner"]+" "+  ssh_info['destination_file'] +"; sudo chmod "+ ssh_info["file_mode"]+" "+ssh_info['destination_file']
-            file_perm=command_over_ssh(ssh_info)
-            print(file_perm)
+            perm_file=command_over_ssh(ssh_info)
+            ssh_info['commands']="sudo rm -f "+ ssh_info['destination_file']
+            del_file=command_over_ssh(ssh_info)
+
+
+
 
         
 
@@ -129,7 +142,7 @@ def services(service_info, ssh_info):
                 print("+++++++++ \n Starting {} Service\n+++++++++".format(srvc))
                 if 'running' in validate_service[0]:
                     print("'"+ srvc + "' already running. [Ok]")
-                    break
+                    continue
                 elif 'dead' in validate_service[0]:
                     ssh_info["commands"]="sudo systemctl start " + srvc
                 else:
@@ -141,7 +154,7 @@ def services(service_info, ssh_info):
                     ssh_info["commands"]="sudo systemctl stop " + srvc
                 elif 'dead' in validate_service[0]:
                     print("'"+ srvc + "' already in stopped condition. [Ok]")
-                    break
+                    continue
                 else:
                     exit("Unrecognized service state '{}' for {} service.".format(validate_service[0],srvc))
             elif srv_block['state'] == 'restart':

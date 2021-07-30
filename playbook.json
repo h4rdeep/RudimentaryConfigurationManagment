@@ -13,15 +13,27 @@
                 {
                     "name":["nano","apache2"],
                     "state":"present"
+                },
+                {
+                    "name":["nano"],
+                    "state":"present"
                 }
             ],
             "files":
             [
                 {                
-                    "source":"files/index.php",
+                    "name":"index.php",
+                    "state": "copy",
                     "destination":"/var/www/html/index.php",
+                    "source":"files/index.php",
                     "mode":"0644",
                     "owner":"root"
+
+                },
+                {
+                    "name":"index.html",
+                    "destination":"/var/www/html/index.html",
+                    "state":"absent"
 
                 }
             ],
