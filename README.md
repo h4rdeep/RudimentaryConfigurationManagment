@@ -1,5 +1,5 @@
-# RudimentryConfigManagment
-  A client less Rudimentry config managment tool which uses SSH and python to configure remote targer machies.<br>
+# RudimentaryConfigManagment
+  A client less Rudimentary configuration managment tool which uses SSH and python to configure remote targer machies.<br>
 
 **System Requirements**:<br>
   Python 3<br>
